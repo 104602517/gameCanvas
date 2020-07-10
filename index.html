@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html class="no-js">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title></title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    </head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" rel="stylesheet">
+    <style>
+        canvas{
+            margin: 0 auto;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+    <body>
+        <canvas height="400"></canvas>
+        <script>
+            const oCanvas = document.querySelector('canvas');
+            const ctx = oCanvas.getContext('2d');
+            const windowWidth = window.innerWidth;
+            const BRICK_WIDTH = 50;
+            const BRICK_HEIGHT = 20;
+            let arrOfBrick = [];
+            
+            oCanvas.width = windowWidth*0.8;
+            //一秒30幀
+            const FRAME_PER_SEC = 30;
+            const TIMER = setInterval(updateAll,1000/FRAME_PER_SEC);
+            //偵測裝置
+            function detectMob() {
+                const toMatch = [
+                    'Android',
+                    'webOS',
+                    'iPhone',
+                    'iPad',
+                    'iPod',
+                    'BlackBerry',
+                    'Windows Phone'
+                ];
+                return toMatch.some( toMatchItem => navigator.userAgent.match(toMatchItem));
+            }
+            // 球初始化
+            let ballX = 100;
+            let ballY = 100;
+            let ballVelocityX = 5;
+            let ballVelocityY = 7;
+
+            // 底下用來接的竿子初始化
+            let paddle_x = 50;
+            const PADDLE_Y = oCanvas.height-30;
+            const PADDLE_WIDTH = 100;
+            const PADDLE_HEIGHT = 10;
+            const PADDLE_TOP_EDGE = PADDLE_Y;
+            const PADDLE_BOTTOM_EDGE = PADDLE_Y + PADDLE_HEIGHT;
+            let paddle_left_edge = paddle_x;
+            let paddle_right_dege = paddle_x + PADDLE_WIDTH;
+
+            // 判斷是不是手機
+            if(detectMob() === true){
+                (function() {
+                    oCanvas.addEventListener('touchmove', event => {
+
+                    const RECT = oCanvas.getBoundingClientRect();
+                    const ROOT = document.documentElement;
+                    let mouseX = event.touches[0].clientX - RECT.left - ROOT.scrollLeft;
+                    paddle_x = mouseX - PADDLE_WIDTH/2;
+
+                    })
+                }())
+            }else{
+                (function() {
+                    oCanvas.addEventListener('mousemove', event => {
+
+                    const RECT = oCanvas.getBoundingClientRect();
+                    const ROOT = document.documentElement;
+                    let mouseX = event.clientX - RECT.left - ROOT.scrollLeft;
+                    paddle_x = mouseX - PADDLE_WIDTH/2;
+                    
+                    ctx.save();
+                    ctx.fillStyle = 'yellow';
+                    ctx.fillText(`${Math.floor(mouseX)},${event.clientY}`,paddle_x,event.clientY);
+                    })
+                }())
+            }
+            
+            
+            function updateAll() {
+
+                clearCanvas();
+                drawBrick();
+                moveBall();
+                drawBall();
+                drawPaddle();
+
+            }
+
+            //清除前一幀並畫上背景
+            function clearCanvas() {
+
+                ctx.clearRect(0,0,oCanvas.width,oCanvas.height);
+                ctx.beginPath();
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0,0,oCanvas.width,oCanvas.height);
+                
+            }
+
+            //畫磚塊
+            function drawBrick() {
+                for(let i = 0;i < 4;i++){
+                    arrOfBrick[i] = true;
+                }
+                arrOfBrick.forEach( (Brick,index) => {
+                    if(Brick){
+                        ctx.beginPath();
+                        ctx.fillStyle = 'blue';
+                        ctx.fillRect(0+BRICK_WIDTH*index,0,BRICK_WIDTH-5,BRICK_HEIGHT);
+                        ctx.closePath();
+                    }
+                })
+            }
+
+            function moveBall() {
+
+                //邊界條件
+                if(ballX>oCanvas.width-10||ballX<10){
+                    ballVelocityX*=-1;
+                }
+                if(ballY<10){
+                    ballVelocityY*=-1;
+                }
+                if(ballY>oCanvas.height){
+                    resetBall();
+                }
+
+                //有接到條件
+                paddle_left_edge = paddle_x;
+                paddle_right_dege = paddle_x + PADDLE_WIDTH;
+                //以球球距離中心點的距離當做彈的角度設定
+                let paddleCenterX = paddle_x + PADDLE_WIDTH/2;
+                let disOfCenterX = ballX - paddleCenterX;
+                console.log(ballVelocityX)
+                if( ballX+10>paddle_left_edge &&
+                    ballX-10<paddle_right_dege &&
+                    ballY+10>PADDLE_TOP_EDGE &&
+                    ballY+10<PADDLE_BOTTOM_EDGE){
+                        ballVelocityY*=-1;
+                        ballVelocityX>0?ballVelocityX = Math.min(disOfCenterX*0.3,9):ballVelocityX = Math.max(disOfCenterX*0.3,-9)
+                        console.log(ballVelocityX)
+                }
+
+                ballX+=ballVelocityX;
+                ballY+=ballVelocityY;
+
+            }
+
+            //畫球球的位置
+            function drawBall() {
+
+                ctx.beginPath();
+                ctx.fillStyle = 'white';
+                ctx.arc(ballX,ballY,20,0,2*Math.PI,true);
+                ctx.fill();
+                
+            }
+
+            //畫棒棒的位置
+            function drawPaddle() {
+
+                ctx.beginPath();
+                ctx.fillStyle = 'white';
+                ctx.fillRect(paddle_x, PADDLE_Y, PADDLE_WIDTH, PADDLE_HEIGHT);
+
+            }
+
+            //球噴出底下要重置到Canvas中心
+            function resetBall() {
+
+                ballX = oCanvas.width/2;
+                ballY = oCanvas.height/2-10;
+                ballVelocityX = 5;
+                ballVelocityY = 7;
+
+            }
+        </script>
+    </body>
+</html>
